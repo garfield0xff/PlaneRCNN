@@ -14,3 +14,5 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 ENDIF()
 
 install(TARGETS plane_rcnn DESTINATION bin)
+
+set_target_properties(plane_rcnn PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

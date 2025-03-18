@@ -15,8 +15,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 # build system
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     MESSAGE(STATUS "platform: Linux")
-    # .so option ( shared library )
-    add_compile_options(-fPIC)
+    set(CMAKE_PREFIX_PATH "/usr/lib/cmake/glm" ${CMAKE_PREFIX_PATH})
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 #####################################################
@@ -32,20 +32,6 @@ include(common/base)
 #####################################################
 # option
 option( BUILD_TEST "Build Test." OFF)
-
-
-#####################################################
-# find package
-find_package(OpenGL)
-find_package(glm)
-find_package(GLEW)
-find_package(GLFW QUIET)
-if(NOT GLFW_FOUND)
-    message(STATUS "GLFW NOT FOUND PKG FOUND...")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GLFW REQUIRED glfw3)
-endif()
-
 #####################################################
 # include headers
 include_directories(.)
