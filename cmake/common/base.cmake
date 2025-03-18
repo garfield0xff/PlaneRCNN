@@ -1,0 +1,23 @@
+macro(subdirlist result curdir)
+  file(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  set(dirlist "")
+  foreach(child ${children})
+    if( NOT child STREQUAL "CMakeFiles" )
+      if(IS_DIRECTORY ${curdir}/${child})
+          set(dirlist ${dirlist} ${child})
+      endif()
+    endif()
+  endforeach()
+  set(${result} ${dirlist})
+endmacro()
+
+macro(add_source_files var path)
+  file(GLOB src_files "${path}/*.cpp")
+  set(${var} ${src_files})
+endmacro()
+
+
+macro(add_header_files var path)
+  FILE(GLOB hdr_files "${path}/*.h")
+  set(${var} ${hdr_files})
+endmacro()
