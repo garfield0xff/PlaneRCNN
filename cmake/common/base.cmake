@@ -13,7 +13,8 @@ endmacro()
 
 macro(add_source_files var path)
   file(GLOB src_files "${path}/*.cpp")
-  set(${var} ${src_files})
+  list(APPEND ${var} ${src_files}) 
+  set(${var} ${${var}} PARENT_SCOPE)
 endmacro()
 
 

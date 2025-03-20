@@ -8,6 +8,17 @@
 namespace vl {
 namespace core {
 namespace serial {
+
+class MillisecondTimer {
+    public:
+     explicit MillisecondTimer(const uint32_t millis);
+     int64_t remaining();
+
+    private:
+     static timespec timespec_now();
+     timespec expiry;
+};
+
 class Serial::SerialImpl {
 
 public:
@@ -36,6 +47,8 @@ bool setTermios(const termios *tio);
 
 bool getTermios(termios *tio);
 
+void setTimeout(Timeout &timeout);
+
 private:
     std::string port_;
     int fd_;
@@ -44,6 +57,7 @@ private:
     bool is_open_;
 
     unsigned long baudrate_;
+    Timeout  timeout_;
     uint32_t byte_time_ns;
 
     parity_t parity_;           

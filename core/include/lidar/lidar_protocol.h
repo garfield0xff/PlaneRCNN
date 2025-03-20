@@ -1,5 +1,7 @@
 #pragma one
 
+#define YDLIDAR_START_BIT             0xA5
+
 #define YDLIDAR_START_SCAN            0x60
 #define YDLIDAR_STOP_SCAN             0x65
 #define YDLIDAR_GET_INFO              0x90
@@ -11,3 +13,10 @@
 #define YDLIDAR_GET_FREQ              0x0D
 #define YDLIDAR_SOFT_RESTART          0x40
 
+
+struct cmd_packet {
+    uint8_t syncByte;
+    uint8_t cmd_flag;
+    uint8_t size;
+    uint8_t data;
+} __attribute__((packed)) ;

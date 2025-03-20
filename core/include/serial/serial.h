@@ -2,6 +2,7 @@
 #define SERIAL_H
 
 #include <string>
+#include <vector>
 
 namespace vl {
 namespace core {
@@ -34,10 +35,40 @@ typedef enum {
     flowcontrol_hardware
 } flowcontrol_t;
 
+struct Timeout {
+    static constexpr uint32_t max_value = std::numeric_limits<uint32_t>::max();
+
+    static constexpr uint32_t max() {
+        return max_value;
+    }
+
+    static Timeout simpleTimeout(uint32_t timeout) {
+        return Timeout(max(), timeout, 0, timeout, 0);
+    }
+
+    uint32_t inter_byte_timeout;
+    uint32_t read_timeout_constant;
+    uint32_t read_timeout_multiplier;
+    uint32_t write_timeout_constant;
+    uint32_t write_timeout_multiplier;
+
+    Timeout(uint32_t inter_byte_timeout_= 0,
+            uint32_t read_timeout_constant_ = 0,
+            uint32_t read_timeout_multiplier_ = 0,
+            uint32_t write_timeout_constant_ = 0,
+            uint32_t write_timeout_multiplier = 0)
+            : inter_byte_timeout(inter_byte_timeout_),
+              read_timeout_constant(read_timeout_constant_),
+              read_timeout_multiplier(read_timeout_multiplier_),
+              write_timeout_constant(write_timeout_constant_),
+              write_timeout_multiplier(write_timeout_multiplier) {}
+};
+
 class Serial {
 public:
     explicit Serial(const std::string &port = "",
                     uint32_t baudrate = 9600,
+                    Timeout timeout = Timeout(),
                     bytesize_t bytesize = eightbits,
                     parity_t parity = parity_none,
                     stopbits_t stopbits = stopbits_one,
