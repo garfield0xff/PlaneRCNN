@@ -17,9 +17,9 @@ public:
 
     void disconnect();
 
-    virtual bool startScan();
+    bool startScan();
 
-    virtual bool stopScan();
+    bool stopScan();
 
     size_t sendCommand(uint8_t cmd, const void *payload = NULL, size_t payloadsize = 0);
     

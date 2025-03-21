@@ -2,6 +2,7 @@
 #define SERIAL_UNIX_H
 
 #include <termios.h>
+#include <cstring>
 
 #include "serial/serial.h"
 
