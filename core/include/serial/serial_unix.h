@@ -36,6 +36,12 @@ void close();
 
 bool isOpen();
 
+size_t available();
+
+bool waitReadable(uint32_t timeout);
+
+void waitByteTimes(size_t count);
+
 size_t read(uint8_t *buf, size_t size = 1);
 
 size_t write(const uint8_t *data, size_t length);
@@ -59,7 +65,7 @@ private:
 
     unsigned long baudrate_;
     Timeout  timeout_;
-    uint32_t byte_time_ns;
+    uint32_t byte_time_ns_;
 
     parity_t parity_;           
     bytesize_t bytesize_;       

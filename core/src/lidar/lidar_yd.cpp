@@ -5,6 +5,8 @@ namespace vl{
  using namespace core::serial;
 
  YDLidarController::~YDLidarController() {
+   disableDataGrabbing();
+
     if(m_serial) {
         if(m_serial->isOpen()) {
             m_serial->closePort();
@@ -17,7 +19,7 @@ namespace vl{
  }
 
  result_t YDLidarController::connect(const char *port_path, uint32_t buadrate) {
-    printf("connect\n");
+
     m_buadrate = buadrate;
     m_port = string(port_path);
     m_isConnected = true;
@@ -28,12 +30,20 @@ namespace vl{
         return RESULT_FAIL;
     }
     
-
     return RESULT_OK;
+ }
+
+ void YDLidarController::disableDataGrabbing() {
+   m_isScanning = false;
+   if(m_thread) {
+      if(m_thread->joinable())
+         m_thread->join();
+      delete m_thread;
+      m_thread = nullptr;
+   }
  }
  
  void YDLidarController::disconnect() {
-    printf("disconnect\n");
     if(!m_isConnected) {
         return;
     }
@@ -43,17 +53,58 @@ namespace vl{
     m_isConnected = false;
  }
 
- bool YDLidarController::startScan() {
-    printf("startScan\n");
-    result_t ret = sendCommand(YDLIDAR_START_SCAN);
-    return true;
+ result_t YDLidarController::startScan() {
+    result_t ret;
+    ret = sendCommand(YDLIDAR_START_SCAN);
+    ret = createThread();
+    return ret;
  }
 
- bool YDLidarController::stopScan() {
-    printf("stopScan\n");
-    result_t ret = sendCommand(YDLIDAR_STOP_SCAN);
-    return true;
+ result_t YDLidarController::stopScan() {
+    delay(30);
+    result_t ret;
+    ret = sendCommand(YDLIDAR_STOP_SCAN);  
+    return ret;
  }
+
+ result_t YDLidarController::createThread() {
+   m_thread = new std::thread(&YDLidarController::cacheScanData, this);
+   if(!m_thread) {
+      return RESULT_FAIL;
+   }
+   return RESULT_OK;
+ }
+
+ int YDLidarController::cacheScanData() {
+   node_info local_buf[YD_PACKMAXNODES];
+   size_t count = YD_PACKMAXNODES;
+   node_info local_scan[MAX_SCAN_NODES];
+   result_t ans  = RESULT_FAIL;
+   ::memset(local_scan, 0, sizeof(local_scan));
+
+   int timeout_count = 0;
+   m_isScanning = true;
+
+   while(m_isScanning) {
+      ans = waitScanData(local_buf, count, 1000);
+      
+
+      for(size_t pos = 0; pos < count; ++pos) {
+         
+      }
+   }
+   return 0;
+ }
+
+ result_t YDLidarController::waitScanData(node_info *nodebuffer, size_t &count, uint32_t timeout) {
+   if(!m_isConnected)  {
+      count = 0;
+      return RESULT_FAIL;
+   }
+
+   
+ }
+
 
  size_t YDLidarController::sendCommand(uint8_t cmd, const void *payload, size_t payloadsize) {
     uint8_t pkt_header[10];
@@ -69,12 +120,47 @@ namespace vl{
     sendData(pkt_header, 2);
 
     return RESULT_OK;
- }
+ } 
 
  size_t YDLidarController::sendData(const uint8_t *data, size_t size) {
-    printf("sendData\n");
     m_serial->write_(data, size);
     return RESULT_OK;
+ }
+
+ size_t YDLidarController::getData(uint8_t *data, size_t size) {
+   if(!m_isConnected) {
+      return RESULT_FAIL;
+   }
+   
+   size_t r = 0;
+   while(size) {
+      r = m_serial->read(data, size);
+      if ( r < 1 ) {
+         return RESULT_FAIL;
+      }
+
+      size -= r;
+      data += r;
+   }
+   return RESULT_OK;
+ }
+
+ 
+
+ size_t YDLidarController::parseResponseHeader(uint8_t *packageBuffer, uint32_t timeout)
+ {
+   int recvPos = 0;
+   uint32_t startTs = getms();
+   uint32_t waitTime = 0;
+
+   result_t ans = RESULT_TIMEOUT;
+   
+   // while (waitTime = getms() - startTs <= timeout)
+   // {
+   //    size_t remainSize = YD_PACKHEADSIZE - recvPos;
+   //    size_t recvSize = 0;
+      
+   // }
  }
 
  

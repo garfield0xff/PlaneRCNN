@@ -1,8 +1,11 @@
 #ifndef LIDAR_CONTROLLER_H_
 #define LIDAR_CONTROLLER_H_
 
+#include <thread>
+
 #include "std.h"
 #include "lidar_protocol.h"
+#include "logger.h"
 
 namespace vl {
 namespace core {
@@ -10,6 +13,10 @@ namespace lidar {
 
 class BaseLidarController {
 public:
+    enum YDLIDAR_MODULES {
+        MAX_SCAN_NODES = 1000
+    };
+
     BaseLidarController() : m_port(""),
                         m_buadrate(8000)
     {
@@ -25,6 +32,8 @@ public:
         bool m_isConnected;
         std::string m_port;
         uint32_t m_buadrate;
+
+        thread* m_thread;
 
 };
 } // namespace lidar

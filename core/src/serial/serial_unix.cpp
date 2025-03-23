@@ -8,6 +8,14 @@
 #include <mach/mach.h>
 #endif
 
+#ifndef TIOCINQ
+#ifdef FIONREAD
+#define TIOCINQ FIONREAD
+#else
+#define TIOCINQ 0x541B
+#endif
+#endif
+
 #include "serial/serial_unix.h"
 
 
@@ -266,18 +274,116 @@ bool Serial::SerialImpl::isOpen() {
     return is_open_;
 }
 
-size_t Serial::SerialImpl::read(uint8_t *buf, size_t size) {
+size_t Serial::SerialImpl::available() {
+  if (!is_open_) {
+    return 0;
+  }
 
+  int count = 0;
+
+  if (-1 == ioctl(fd_, FIONREAD, &count)) {
+    return 0;
+  } else {
+    return static_cast<size_t>(count);
+  }
+}
+
+
+bool Serial::SerialImpl::waitReadable(uint32_t timeout) {
+  fd_set read_fds;
+  FD_ZERO(&read_fds);
+  FD_SET(fd_, &read_fds);
+  timespec timeout_ts(timespec_from_ms(timeout));
+  int r = pselect(fd_ + 1, &read_fds, NULL, NULL, &timeout_ts, NULL);
+
+  if ( r < 0) {
+    return false;
+  }
+
+  if(r == 0) {
+    return false;
+  }
+
+  if(!FD_ISSET(fd_, &read_fds)) {
+    return false;
+  }
+
+  return true;
+}
+
+void Serial::SerialImpl::waitByteTimes(size_t count) {
+  timespec wait_time = { 0, static_cast<long>(byte_time_ns_ * count)};
+  pselect(0, NULL, NULL, NULL, &wait_time, NULL);
+}
+
+size_t Serial::SerialImpl::read(uint8_t *buf, size_t size) {
+  if (!is_open_) {
+    return 0;
+  }
+
+  size_t bytes_read = 0;
+
+  long total_timeout_ms = timeout_.read_timeout_constant;
+  total_timeout_ms += timeout_.read_timeout_multiplier * static_cast<long>(size);
+  MillisecondTimer total_timeout(total_timeout_ms);
+
+  {
+    ssize_t bytes_read_now = ::read(fd_, buf, size);
+
+    if (bytes_read_now > 0) {
+      bytes_read = bytes_read_now;
+    }
+  }
+
+  while (bytes_read < size) {
+    int64_t timeout_remaining_ms = total_timeout.remaining();
+
+    if (timeout_remaining_ms <= 0) {
+      break;
+    }
+
+
+    uint32_t timeout = std::min(static_cast<uint32_t>(timeout_remaining_ms),
+                                timeout_.inter_byte_timeout);
+
+
+    if (waitReadable(timeout)) {
+      if (size > 1 && timeout_.inter_byte_timeout == Timeout::max()) {
+        size_t bytes_available = available();
+
+        if (bytes_available + bytes_read < size) {
+          waitByteTimes(size - (bytes_available + bytes_read));
+        }
+      }
+
+      ssize_t bytes_read_now = ::read(fd_, buf + bytes_read, size - bytes_read);
+
+      if (bytes_read_now < 1) {
+        continue;
+      }
+
+      bytes_read += static_cast<size_t>(bytes_read_now);
+
+      if (bytes_read == size) {
+        break;
+      }
+
+      if (bytes_read < size) {
+        continue;
+      }
+      
+      if (bytes_read > size) {
+        break;
+      }
+    }
+  }
+
+  return bytes_read;
 }
 
 size_t Serial::SerialImpl::write(const uint8_t *data, size_t length) {
-    printf("write\n");
     if(is_open_ == false) {
         return 0;
-    }
-
-    for(int i = 0; i < length; i++) {
-        printf("buffer : 0x%X\n", data[i]);
     }
 
     fd_set write_fds;
@@ -316,15 +422,12 @@ size_t Serial::SerialImpl::write(const uint8_t *data, size_t length) {
                 }
                 bytes_written += static_cast<size_t>(bytes_written_now);
                 if (bytes_written == length) {
-                    printf("bytes == length\n");
                     break;
                 }
                 if (bytes_written < length) {
-                    printf("bytes < length\n");
                     continue;
                 }
                 if (bytes_written > length) {
-                    printf("bytes > length\n");
                     break;
                 } 
             }

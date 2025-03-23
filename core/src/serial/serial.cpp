@@ -33,6 +33,10 @@ void Serial::closePort() {
     return pimpl_->close();
 }
 
+size_t Serial::read(uint8_t *buffer, size_t size) {
+    return this->pimpl_->read(buffer, size);
+}
+
 size_t Serial::read(std::string &buffer, size_t size) {
     std::vector<uint8_t> buffer_(size);
     size_t bytes_read = this->pimpl_->read(buffer_.data(), size);
@@ -46,9 +50,9 @@ size_t Serial::write(const std::vector<uint8_t> &data) {
 
 size_t Serial::write_(const uint8_t *data, size_t length)
 {
-    printf("write_\n");
     return pimpl_->write(data, length);
 }
+
 
 }// namespace serial
 }// namespace common

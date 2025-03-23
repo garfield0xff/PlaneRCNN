@@ -15,7 +15,6 @@ int main()
         #error "Unsupported OS"
     #endif
 
-
     controller->startScan();
     sleep(10);
     controller->disconnect();

@@ -1,8 +1,11 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include "logger.h"
+
 #include <string>
 #include <vector>
+#include <sys/ioctl.h>
 
 namespace vl {
 namespace core {
@@ -82,6 +85,8 @@ public:
 
     virtual void closePort();
 
+    size_t read(uint8_t *bufer, size_t size);
+
     size_t read(std::string &buffer, size_t size = 1);
     
     size_t write(const std::vector<uint8_t> &data);
@@ -92,6 +97,8 @@ public:
 private:
     class SerialImpl; 
     SerialImpl *pimpl_;
+    
+    uint8_t* globalRecvBuffer;
 };
 }// namespace serial
 }//namespace core
